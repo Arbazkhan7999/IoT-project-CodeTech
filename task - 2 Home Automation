@@ -1,73 +1,50 @@
-#include <LiquidCrystal.h>
+#include <Servo.h>
 
-// Initialize the library by associating any needed LCD interface pin
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+// Define pin numbers
+const int pirPin = 2;    // PIR sensor output pin
+const int servoPin = 9;  // Servo motor control pin
+const int ledPin = 13;   // LED pin
+
+Servo myServo; // Create a servo object
 
 void setup() {
-  lcd.begin(16, 2);  // 16 columns and 2 rows
-  lcd.setCursor(4, 0);  // Set cursor to column 4, row 0
-  lcd.print("Monitoring");  // Print text to the LCD
-  lcd.setCursor(7, 1);  // Set cursor to column 7, row 1
-  lcd.print("System");  // Print text to the LCD
-  delay(2000);  // 2 seconds delay
+  // Initialize the PIR sensor pin as an input
+  pinMode(pirPin, INPUT);
+  
+  // Initialize the LED pin as an output
+  pinMode(ledPin, OUTPUT);
+
+  // Attach the servo object to the servo pin
+  myServo.attach(servoPin);
+
+  // Initialize the servo position to 0 degrees
+  myServo.write(0);
+
+  // Begin serial communication for debugging purposes
+  Serial.begin(9600);
 }
 
 void loop() {
-  lcd.clear();  // Clear the LCD screen
+  // Read the PIR sensor value
+  int pirValue = digitalRead(pirPin);
 
-  // Reading and calculating temperature
-  float voltage = analogRead(A0) * 0.004882814;  // Convert analog value to voltage
-  float degrees = (voltage - 0.5) * 100.0;  // Convert voltage to temperature (Celsius)
-
-  // Display temperature
-  lcd.setCursor(3, 0);  // Set cursor position
-  lcd.print("Temp: ");  // Print text
-  lcd.setCursor(9, 0);  // Move cursor to print temperature
-  lcd.print(degrees);  // Print temperature
-
-  // Check temperature range
-  if (degrees < 10) {
-    lcd.setCursor(4, 1);  // Set cursor
-    lcd.print("-TOO COLD");  // Print text
-  } else if (degrees < 18) {
-    lcd.setCursor(4, 1);  // Set cursor
-    lcd.print("-COLD");  // Print text
-  } else if (degrees < 30) {
-    lcd.setCursor(4, 1);  // Set cursor
-    lcd.print("-Normal Temp");  // Print text
-  } else if (degrees < 45) {
-    lcd.setCursor(4, 1);  // Set cursor
-    lcd.print("-Hot");  // Print text
+  // Check if motion is detected
+  if (pirValue == HIGH) {
+    // Turn on the LED
+    digitalWrite(ledPin, HIGH);
+    
+    // If motion is detected, rotate the servo to 90 degrees
+    myServo.write(90);
+    Serial.println("Motion detected! Servo rotated to 90 degrees and LED is ON.");
   } else {
-    lcd.setCursor(4, 1);  // Set cursor
-    lcd.print("-TOO HOT");  // Print text
+    // Turn off the LED
+    digitalWrite(ledPin, LOW);
+    
+    // If no motion is detected, rotate the servo back to 0 degrees
+    myServo.write(0);
+    Serial.println("No motion detected. Servo at 0 degrees and LED is OFF.");
   }
 
-  delay(2000);  // 2 seconds delay
-
-  lcd.clear();  // Clear the screen for the next reading
-
-  // Reading and calculating light intensity
-  int intensity = analogRead(A1);  // Read light intensity from sensor
-
-  // Display light intensity
-  lcd.setCursor(1, 0);  // Set cursor
-  lcd.print("Intensity:");  // Print text
-  lcd.setCursor(12, 0);  // Set cursor to print intensity value
-  lcd.print(intensity);  // Print light intensity
-
-  // Check light intensity range
-  if (intensity < 230) {
-    lcd.setCursor(4, 1);  // Set cursor
-    lcd.print("-TOO BRIGHT");  // Print text
-  } else if (intensity < 460) {
-    lcd.setCursor(2, 1);  // Set cursor
-    lcd.print("-Medium Light");  // Print text
-  } else {
-    lcd.setCursor(4, 1);  // Set cursor
-    lcd.print("-TOO DARK");  // Print text
-  }
-
-  delay(2000);  // 2 seconds delay
-  lcd.clear();  // Clear the screen before the next loop
+  // Add a small delay to avoid multiple triggers
+  delay(200);
 }
